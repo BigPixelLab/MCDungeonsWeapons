@@ -100,27 +100,22 @@ public abstract class BowItemMixin{
         this.setLivingEntity(user);
     }
 
-    @SuppressWarnings("lossy-conversions")
     @ModifyArg(method = "onStoppedUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/BowItem;getPullProgress(I)F"), index = 0)
     private int mcdw$acceleratedPullProgress(int value){
         ItemStack bowStack = livingEntity.getActiveItem();
 
-        if (bowStack.getItem() instanceof McdwShortbow mcdwShortBow) {
-            value /= (mcdwShortBow.getDrawSpeed() / 20);
-        } else if (bowStack.getItem() instanceof McdwLongbow mcdwLongBow) {
-            value /= (mcdwLongBow.getDrawSpeed() / 20);
-        } else if (bowStack.getItem() instanceof McdwBow mcdwBow) {
-            value /= (mcdwBow.getDrawSpeed() / 20);
-        }
+        // Enchantments below work on the vanilla 20 tick scale
+        float pullTime = RangedAttackHelper.getBowPullTime(bowStack);
+        float ticks = value * 20f / pullTime;
 
         if (Mcdw.CONFIG.mcdwEnchantmentsConfig.ENCHANTMENT_CONFIG.get(EnchantmentsID.ACCELERATE).mcdw$getIsEnabled()) {
             int accelerateLevel = EnchantmentHelper.getLevel(EnchantsRegistry.enchantments.get(EnchantmentsID.ACCELERATE), bowStack);
             if (accelerateLevel > 0) {
                 StatusEffectInstance accelerateInstance = livingEntity.getStatusEffect(StatusEffectsRegistry.ACCELERATE);
                 int consecutiveShots = accelerateInstance != null ? accelerateInstance.getAmplifier() + 1 : 0;
-                value = (int) (value * (1f + (MathHelper.clamp(consecutiveShots * (6.0f + 2.0f * accelerateLevel), 0f, 100f) / 100f)));
+                ticks *= 1f + (MathHelper.clamp(consecutiveShots * (6.0f + 2.0f * accelerateLevel), 0f, 100f) / 100f);
 
-                if (BowItem.getPullProgress(value) >= 1) {
+                if (ticks >= 20) {
                     StatusEffectInstance accelerateUpdateInstance =
                             new StatusEffectInstance(StatusEffectsRegistry.ACCELERATE, 60, consecutiveShots, false, false, true);
                     livingEntity.addStatusEffect(accelerateUpdateInstance);
@@ -131,11 +126,15 @@ public abstract class BowItemMixin{
         if (Mcdw.CONFIG.mcdwEnchantmentsConfig.ENCHANTMENT_CONFIG.get(EnchantmentsID.OVERCHARGE).mcdw$getIsEnabled()) {
             int overchargeLevel = EnchantmentHelper.getLevel(EnchantsRegistry.enchantments.get(EnchantmentsID.OVERCHARGE), bowStack);
             if (overchargeLevel > 0) {
-                overcharge = Math.min((value / 20) - 1, overchargeLevel);
-                value = overcharge == overchargeLevel ? value : value % 20;
+                overcharge = Math.min((int) (ticks / 20) - 1, overchargeLevel);
+                ticks = overcharge == overchargeLevel ? ticks : ticks % 20;
             }
         }
-        return value;
+
+        // Ranged Weapon API divides by its own pull time instead of 20
+        if (RangedAttackHelper.isPullTimeFromRangedWeaponAPI(bowStack))
+            return Math.round(ticks * pullTime / 20f);
+        return (int) ticks;
     }
 
     @ModifyArgs(method = "onStoppedUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/projectile/PersistentProjectileEntity;setVelocity(Lnet/minecraft/entity/Entity;FFFFF)V"))

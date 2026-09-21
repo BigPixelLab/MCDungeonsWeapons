@@ -7,6 +7,7 @@ This software's content is licensed under the Timefall Development License 1.2. 
 package chronosacaria.mcdw.client;
 
 import chronosacaria.mcdw.Mcdw;
+import chronosacaria.mcdw.api.util.RangedAttackHelper;
 import chronosacaria.mcdw.bases.*;
 import chronosacaria.mcdw.enchants.summons.render.SummonedBeeRenderer;
 import chronosacaria.mcdw.enums.*;
@@ -98,6 +99,8 @@ public class McdwClient implements ClientModInitializer {
         );
     }
     private static float calculateDrawSpeed(ItemStack itemStack, LivingEntity livingEntity, float drawSpeed) {
+        if (itemStack.getItem() instanceof BowItem)
+            drawSpeed = RangedAttackHelper.getBowPullTime(itemStack);
         int useTicks = itemStack.getMaxUseTime() - livingEntity.getItemUseTimeLeft();
         if (Mcdw.CONFIG.mcdwEnchantmentsConfig.ENCHANTMENT_CONFIG.get(EnchantmentsID.ACCELERATE).mcdw$getIsEnabled()) {
             int accelerateLevel = EnchantmentHelper.getLevel(EnchantsRegistry.enchantments.get(EnchantmentsID.ACCELERATE), itemStack);

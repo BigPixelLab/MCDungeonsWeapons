@@ -6,6 +6,7 @@ This software's content is licensed under the Timefall Development License 1.2. 
 */
 package chronosacaria.mcdw.mixin.mcdw.client;
 
+import chronosacaria.mcdw.api.util.RangedAttackHelper;
 import chronosacaria.mcdw.bases.McdwBow;
 import chronosacaria.mcdw.bases.McdwLongbow;
 import chronosacaria.mcdw.bases.McdwShortbow;
@@ -43,20 +44,13 @@ public class AbstractClientPlayerEntityMixin {
                     itemStack.getItem() instanceof McdwShortbow ||
                     itemStack.getItem() instanceof McdwLongbow) {
                 int i = abPlayer.getItemUseTime();
+                float pullTime = RangedAttackHelper.getBowPullTime(itemStack);
                 int overchargeLevel = EnchantmentHelper.getLevel(EnchantsRegistry.enchantments.get(EnchantmentsID.OVERCHARGE), itemStack);
                 if (overchargeLevel > 0) {
-                    if (itemStack.getItem() instanceof McdwShortbow mcdwShortBow) {
-                        int overcharge = (int) Math.min((i / mcdwShortBow.getDrawSpeed()) - 1, overchargeLevel);
-                        i = overcharge == overchargeLevel ? i : (int) (i % mcdwShortBow.getDrawSpeed());
-                    } else if (itemStack.getItem() instanceof McdwLongbow mcdwLongBow) {
-                        int overcharge = (int) Math.min((i / mcdwLongBow.getDrawSpeed()) - 1, overchargeLevel);
-                        i = overcharge == overchargeLevel ? i : (int) (i % mcdwLongBow.getDrawSpeed());
-                    } else if (itemStack.getItem() instanceof McdwBow mcdwBow) {
-                        int overcharge = (int) Math.min((i / mcdwBow.getDrawSpeed()) - 1, overchargeLevel);
-                        i = overcharge == overchargeLevel ? i : (int) (i % mcdwBow.getDrawSpeed());
-                    }
+                    int overcharge = (int) Math.min((i / pullTime) - 1, overchargeLevel);
+                    i = overcharge == overchargeLevel ? i : (int) (i % pullTime);
                 }
-                float g = (float)i / 20.0F;
+                float g = (float)i / pullTime;
                 if (g > 1.0F) {
                     g = 1.0F;
                 } else {

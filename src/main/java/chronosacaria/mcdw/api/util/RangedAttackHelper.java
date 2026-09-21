@@ -8,7 +8,10 @@ package chronosacaria.mcdw.api.util;
 
 import chronosacaria.mcdw.bases.McdwBow;
 import chronosacaria.mcdw.bases.McdwCrossbow;
+import chronosacaria.mcdw.bases.McdwLongbow;
 import chronosacaria.mcdw.bases.McdwShortbow;
+import chronosacaria.mcdw.compat.RangedWeaponAPICompat;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.item.ItemStack;
@@ -65,6 +68,28 @@ public class RangedAttackHelper {
             arrowVelocity = hasProjectile(stack, Items.FIREWORK_ROCKET) ? 1.6F : 3.15F;
         }
         return arrowVelocity;
+    }
+
+    // True when Ranged Weapon API replaces BowItem.getPullProgress for this bow
+    public static boolean isPullTimeFromRangedWeaponAPI(ItemStack stack) {
+        return FabricLoader.getInstance().isModLoaded("ranged_weapon_api")
+                && RangedWeaponAPICompat.getPullTime(stack.getItem()) > 0;
+    }
+
+    // Ticks needed to fully draw the bow
+    public static float getBowPullTime(ItemStack stack) {
+        if (isPullTimeFromRangedWeaponAPI(stack))
+            return RangedWeaponAPICompat.getPullTime(stack.getItem());
+
+        float drawSpeed = 20.0F;
+        if (stack.getItem() instanceof McdwShortbow mcdwShortbow) {
+            drawSpeed = mcdwShortbow.getDrawSpeed();
+        } else if (stack.getItem() instanceof McdwLongbow mcdwLongbow) {
+            drawSpeed = mcdwLongbow.getDrawSpeed();
+        } else if (stack.getItem() instanceof McdwBow mcdwBow) {
+            drawSpeed = mcdwBow.getDrawSpeed();
+        }
+        return drawSpeed > 0 ? drawSpeed : 20.0F;
     }
 
     public static float getVanillaOrModdedBowArrowVelocity(ItemStack stack, int charge){

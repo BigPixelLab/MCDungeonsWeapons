@@ -38,4 +38,12 @@ public class RangedWeaponAPICompat {
             ((CustomRangedWeapon)item).setRangedWeaponConfig(new RangedConfig((int) pullTime, (float) damage, (float) velocity));
         }
     }
+
+    // Pull time Ranged Weapon API uses for the item, 0 when it falls back to vanilla behaviour
+    public static int getPullTime(Item item) {
+        if (!(item instanceof CustomRangedWeapon customRangedWeapon))
+            return 0;
+        RangedConfig config = customRangedWeapon.getRangedWeaponConfig();
+        return config != null ? config.pull_time() : 0;
+    }
 }
